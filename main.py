@@ -10,15 +10,7 @@ from utils import check_path
 BUFFER_SIZE = 1024 * 64
 
 
-def encrypt(path: str, passwd: str, output: Optional[str]) -> None:
-    exists, is_dir = check_path(path)
-    if not exists:
-        print("Path Not Exists")
-        return
-
-    output = output or f"{path}.enc"
-
-    # First, add folder/file to zip. Then we will encrypt the zip file.
+def add_to_zip(path: str, output: str, is_dir: bool) -> str:
     zip_name = f"{output}.zip"
     zip_file = zipfile.ZipFile(zip_name, "w")
 
@@ -31,17 +23,32 @@ def encrypt(path: str, passwd: str, output: Optional[str]) -> None:
 
     zip_file.close()
 
+    return zip_name
+
+
+def encrypt(path: str, passwd: str, output: Optional[str]) -> None:
+    exists, is_dir = check_path(path)
+    if not exists:
+        print("Path Not Exists")
+        return
+
+    # First, we add folder/file to zip. Then we will encrypt the zip file.
+    output = output or f"{path}.enc"
+    zip_name = add_to_zip(path, output, is_dir)
+
     try:
         pyAesCrypt.encryptFile(zip_name, output, passwd, BUFFER_SIZE)
     except ValueError:
-        print("Error ...")
+        # Todo: Handle errors
+        print("Something went wrong")
 
+    # Delete the zip file.
     os.remove(zip_name)
 
     print("Encrypted Successfully")
 
 
-def decrypt_file(target, passwd):
+def decrypt_file(target: str, passwd: str) -> None:
     f_exists, _ = check_path(target)
     if not f_exists:
         print("Path Not Exists")
@@ -57,7 +64,7 @@ def decrypt_file(target, passwd):
         os.remove(zip_name)
         print("Decrypted Successfully")
     except ValueError:
-        print(f"Error ...")
+        print(f"Something went wrong")
 
 
 def main() -> None:
